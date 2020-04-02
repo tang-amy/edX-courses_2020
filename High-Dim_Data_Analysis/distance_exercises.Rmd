@@ -1,0 +1,61 @@
+---
+title: "distance_exercises"
+author: "Amy Tang"
+date: "3/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(devtools)
+install_github("genomicsclass/tissuesGeneExpression")
+```
+
+### Exercise 1
+```{r}
+library(tissuesGeneExpression)
+data(tissuesGeneExpression)
+head(e)
+head(tissue)
+table(tissue)
+```
+Ans: 31
+
+### Exercise 2
+```{r}
+a <- e[,3]
+b <- e[,45]
+
+sqrt(crossprod(a-b))
+```
+Ans: 152.5662
+
+### Exercise 3
+```{r}
+a <- e['210486_at', ]
+b <- e['200805_at', ]
+
+sqrt(crossprod(a-b))
+```
+Ans: 41.01153
+
+### Exericse 4
+```{r}
+dims <- dim(e)
+dims[1]*dims[1]
+```
+Ans: 493506225
+
+### Exercise 5
+```{r}
+dims <- dim(t(e))
+# dist doc: length of the vector is n*(n-1)/2
+dims[1]*(dims[1]-1)/2 
+```
+Ans: 17766
+
+### Exericse 6
+Ans: R takes advantage of symmetry (because distance between x and y // y and x are the same). Only stores lower triangle matrix
