@@ -1,0 +1,104 @@
+---
+title: "mds_exercises"
+author: "Amy Tang"
+date: "4/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+````{r}
+library(tissuesGeneExpression)
+data(tissuesGeneExpression)
+```
+
+## Exercise 1
+```{r}
+y <- e - rowMeans(e)
+s <- svd(y)
+z <- s$d * t(s$v)
+```
+
+```{r}
+library(rafalib)
+ftissue <- factor(tissue)
+mypar(1,1)
+plot(z[1,],z[2,],col=as.numeric(ftissue))
+legend("topleft",levels(ftissue),col=seq_along(ftissue),pch=1)
+```
+
+```{r}
+d <- dist(t(e))
+mds <- cmdscale(d)
+z[1,]/mds[,1]
+```
+Question: correlation between first row of z and first col of mds
+Ans: -1
+
+## Exercise 2
+```{r}
+z[2,]/mds[,2]
+```
+Question: correlation between second row of z and second col of mds
+Ans: -1
+
+## Exercise 3
+```{r}
+mypar(1,2)
+plot(z[1,],z[2,],col=as.numeric(ftissue))
+legend("topleft",levels(ftissue),col=seq_along(ftissue),pch=1)
+plot(mds[,1],mds[,2],col=as.numeric(ftissue))
+```
+Question: What needs to be done to z[1,] and z[,2] to get identical plots
+Ans: multiply z[1,] and z[2,] by -1
+
+## Exercise 4
+```{r}
+library(GSE5859Subset)
+data(GSE5859Subset)
+s <- svd(geneExpression-rowMeans(geneExpression))
+z <- s$d * t(s$v)
+
+which.max(cor(sampleInfo$group, t(z)))
+```
+Question: Which dimension of z most correlates with the outcome sampleInfo$group
+Ans: 1
+
+## Exercise 5
+```{r}
+max(cor(sampleInfo$group, t(z)))
+```
+Question: What is the max correlation between z and sampleInfo$group?
+Ans: 0.623
+
+## Exercise 6
+```{r}
+# add 1 because we removed 1 column from z
+which.max(cor(sampleInfo$group, t(z))[-1]) + 1
+```
+Question: Which dimension of z has second highest correlation with the outcome sampleInfo$group
+Ans: 6
+
+## Exercise 7
+```{r}
+
+month <- format(sampleInfo$date, "%m")
+month <- factor(month)
+
+which.max(cor(as.numeric(month), t(z)))
+max(cor(as.numeric(month), t(z)))
+```
+Question: Which dimension of z hs the highest corelation with the outcome month? What is this correlation?
+Ans: 1, 0.830
+
+## Exercise 8
+```{r}
+result <-split(s$u[,6], geneAnnotation$CHR)
+result <- result[which(names(result)!="chrUn")]
+boxplot(result,range=0)
+boxplot(result,range=0,ylim=c(-0.025,0.025))
+medians <- sapply(result,median)
+names(result)[which.max(abs(medians))]
+```
