@@ -1,0 +1,117 @@
+---
+title: "projection-svd_exercises"
+author: "Amy Tang"
+date: "3/31/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(Biobase)
+library(devtools)
+install_github("genomicsclass/GSE5859Subset")
+library(GSE5859Subset)
+data(GSE5859Subset)
+```
+
+### Projections Exercise 1
+```{r}
+y <- geneExpression[,1:2]
+y
+```
+Question: Which of the following projections of y gives us new coordinates such that column 2 versus column 1 is an MA plot?
+Ans: y([1,1][1,-1])
+
+### Projections Exercise 2
+Question: Y = M x N, in the SVD Y = UDV(T) what is _incorrect_?
+Ans: D are the coordinates of projection U(T)Y
+Correct statements:
+- DV(T) are the new coordinates for the projection U(T)Y
+- UD are the new coordination for the projection YV
+- U(T)Y is aprojection from an M-dimensional to N-dimensional subspace
+
+
+````{r}
+library(tissuesGeneExpression)
+data(tissuesGeneExpression)
+```
+
+```{r}
+s <- svd(e)
+signflips <- sample(c(-1,1), ncol(e), replace=TRUE)
+signflips
+
+newu <- sweep(s$u, 2, signflips,FUN="*")
+newv <- sweep(s$v, 2, signflips,FUN="*")
+all.equal(s$u %*% diag(s$d) %*% t(s$v), newu %*% diag(s$d) %*% t(newv))
+```
+
+### SVD Exercise 1
+```{r}
+s <- svd(e)
+m <- rowMeans(e)
+cor(s$u[,1],m) # correlation between first column of s$u and m
+```
+Ans: -0.99...
+
+### SVD Exercise 2
+```{r}
+newmeans <- rnorm(nrow(e)) # random value to add to create new mean
+newe <- e + newmeans
+sqrt(crossprod(e[,3]-e[,45]))
+sqrt(crossprod(newe[,3]-newe[,45]))
+
+y <- e - rowMeans(e)
+s <- svd(y)
+resid <- y - s$u %*% diag(s$d) %*% t(s$v)
+max(abs(resid))
+
+a <- diag(s$d) %*% t(s$v)
+b <- s$d * t(s$v)
+a
+b
+```
+Ans: diag(s$d) %*% t(s$v) is equivalent to s$d * t(s$v)
+
+### SVD Exercise 3
+Question:
+- vd = t(s$d * t(s$v))
+- which of the following not the same as UDV(t)
+Ans: s$u %*% s$d * t(s$v)
+Correct statements:*
+- tcrossprod(s$u,vd)
+- s$u %*% (s$d * t(s$v))
+- s$u %*% t(vd)
+
+### SVD Exercise 4
+```{r}
+z <- s$d * t(s$v)
+sqrt(crossprod(e[,3]-e[,45]))
+sqrt(crossprod(y[,3]-y[,45]))
+sqrt(crossprod(z[,3]-z[,45]))
+
+realdistance <- sqrt(crossprod(e[,3]-e[,45]))
+approxdistance <- sqrt(crossprod(z[1:2,3]-z[1:2,45]))
+abs(realdistance-approxdistance)
+```
+Ans: 40.62416
+
+### SVD Exercise 5
+```{r}
+realdistance <- sqrt(crossprod(e[,3]-e[,45]))
+approxdistance <- sqrt(crossprod(z[1:7,3]-z[1:7,45]))
+off <- abs(realdistance-approxdistance)
+off/realdistance
+```
+Ans: 7 (minimum number of dimensions needed to be within 10% for approximation)
+
+### SVD Exercise 6
+```{r}
+distances <- sqrt(apply(e[,-3]-e[,3],2,crossprod))
+distances2 <- sqrt(apply(z[1:2,-3]-z[1:2,3],2,crossprod))
+cor.test(distances, distances2, method="spearman")
+```
+Ans: 0.8598592
