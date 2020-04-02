@@ -2,7 +2,8 @@
 HarvardX: PH525.4x
 
 start date: 3.29.2020
-/nfinish date: 
+
+finish date: 
 
 language: R
 
