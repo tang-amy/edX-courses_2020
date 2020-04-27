@@ -1,9 +1,10 @@
 # High-Dimensional Data Analysis Course (EdX)
 HarvardX: PH525.4x
 
-## start date: 3.29.2020
-## finish date: 
+start date: 3.29.2020
 
-## language: R
+finish date: 
 
-## course link: https://www.edx.org/course/high-dimensional-data-analysis
+language: R
+
+course link: https://www.edx.org/course/high-dimensional-data-analysis
