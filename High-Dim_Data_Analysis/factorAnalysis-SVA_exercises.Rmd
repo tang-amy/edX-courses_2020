@@ -1,0 +1,100 @@
+---
+title: "factorAnalysis-SVA_exercises"
+author: "Amy Tang"
+date: "4/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(Biobase)
+library(GSE5859Subset)
+data(GSE5859Subset)
+
+y <- geneExpression - rowMeans(geneExpression)
+```
+
+### Factor Analysis Exercise 4
+```{r}
+s = svd(y)
+varexplained = s$d^2/sum(s$d^2)
+plot(varexplained)
+sum(varexplained>0.1)
+```
+Ans: 2
+
+### Factor Analysis Exercise 5
+```{r}
+s = svd(y)
+month = factor(format(sampleInfo$date,"%m"))
+cors= cor(as.numeric(month), s$v)
+plot(t(cors))
+which.max(abs(cors))
+```
+Ans: PC 1 has highest correlation with month at 0.82. 
+
+### Factor Analysis Exercise 6
+```{r}
+s = svd(y)
+sex = factor(format(sampleInfo$group))
+cors= cor(as.numeric(sex), s$v)
+plot(t(cors))
+which.max(abs(cors))
+cors[1]
+```
+Ans: PC 1 has highest correlation with sex at 0.62. 
+
+### Factor Analysis Exercise 7
+```{r}
+s = svd(y)
+X <- model.matrix(~sex+s$v[,1:2])
+pvals = sapply(1:nrow(geneExpression), function(i) {
+  y = geneExpression[i,]
+  fit = lm(y~X-1)
+  summary(fit)$coef[2,4]
+})
+qvals = qvalue(pvals)$qvalue
+sum(qvals<0.1)
+
+index = geneAnnotation$CHR[qvals < 0.1]%in%c("chrX", "chrY")
+mean(index)
+```
+Ans: 14 genes have a q-val < 0.1 for the different sexes, and all of the genes are on chrX and chrY. 
+
+```{r}
+library(sva)
+```
+### SVA Exercise 1
+```{r}
+s <- svd(geneExpression-rowMeans(geneExpression))
+cor(sampleInfo$group, s$v[,1])
+
+sex = sampleInfo$group
+mod = model.matrix(~sex)
+svafit = sva(geneExpression, mod)
+head(svafit$sv)
+
+for(i in 1:ncol(svafit$sv)) {
+  print(cor(s$v[,i],svafit$sv[,i]))
+}
+
+X = model.matrix(~sex+svafit$sv)
+pvals = sapply(1:nrow(geneExpression), function(i){
+  y = geneExpression[i,]
+  fit = lm(y~X-1)
+  summary(fit)$coef[2,4]
+})
+qvals <- qvalue(pvals)$qvalue
+sum(qvals < 0.1)
+```
+Ans: 13 genes have q-value < 0.1
+
+### SVA Exercise 2
+```{r}
+index = geneAnnotation$CHR[qvals < 0.1]%in%c("chrX", "chrY")
+mean(index)
+```
+Ans: 0.92 (92%) genes are from chrY/chrX. 

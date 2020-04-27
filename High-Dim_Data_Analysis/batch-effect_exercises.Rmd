@@ -1,0 +1,83 @@
+---
+title: "batch-effect_exercises"
+author: "Amy Tang"
+date: "4/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(GSE5859Subset)
+data(GSE5859Subset)
+
+sex <- sampleInfo$group
+month <- factor(format(sampleInfo$date, "%m"))
+table(sex, month)
+```
+
+### exercise 1
+```{r}
+pval = rowttests(geneExpression, factor(sampleInfo$g))$p.value
+qval = qvalue(pval)
+
+sum(qval$qvalue < 0.1)
+```
+Ans: 59
+
+### exercise 2
+```{r}
+pval = rowttests(geneExpression, factor(sampleInfo$g))$p.value
+qval = qvalue(pval)
+
+index = geneAnnotation$CHR[qval$qvalues<0.1]%in%c("chrX", "chrY")
+mean(index)
+```
+Ans: 0.338
+
+### exercise 3
+```{r}
+pval = rowttests(geneExpression, factor(sampleInfo$g))$p.value
+qval = qvalue(pval)
+
+index = which(qval$qvalues<0.1 & !geneAnnotation$CHR%in%c("chrX", "chrY"))
+month = factor(format(sampleInfo$date, "%m"))
+pvals = rowttests(geneExpression[index,],month)$p.value
+mean(pvals<0.05)
+```
+Ans: 0.8718
+
+### exercise 4
+Multiple choice: Modeling month effect to better estimate the sex effect using a linear model. What creates the appropriate design matrix?
+Ans: X = model.matrix(~sex+month)
+
+### exercise 5, 6
+```{r}
+pvals = sapply(1:nrow(geneExpression), function(i) {
+  X = model.matrix(~sex+month)
+  y = geneExpression[i,]
+  fit = lm(y~X-1)
+  summary(fit)$coef[2,4]
+})
+qvals = qvalue(pvals)$qvalue
+sum(qvals < 0.1)
+
+index = geneAnnotation$CHR[qvals < 0.1]%in%c("chrX", "chrY")
+mean(index)
+```
+Ans: 17 
+Ans: 0.8823
+
+```{r}
+pvals = sapply(1:nrow(geneExpression), function(i) {
+  X = model.matrix(~sex+month)
+  y = geneExpression[i,]
+  fit = lm(y~X-1)
+  summary(fit)$coef[3,4]
+})
+qvals = qvalue(pvals)$qvalue
+sum(qvals < 0.1)
+```
+Ans: 3710

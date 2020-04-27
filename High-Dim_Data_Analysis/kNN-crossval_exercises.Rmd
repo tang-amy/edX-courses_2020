@@ -1,0 +1,122 @@
+---
+title: "kNN-crossval_exercises"
+author: "Amy Tang"
+date: "4/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(GSE5859Subset)
+data(GSE5859Subset)
+y <- factor(sampleInfo$group)
+x <- t(geneExpression)
+out <- which(geneAnnotation$CHR%in%c("chrX","chrY"))
+x <- x[,-out]
+
+library(caret)
+```
+### kNN and cross-validation exercise 1
+```{r}
+set.seed(1)
+idx <- createFolds(y,k=10)
+idx[[3]][2]
+```
+Ans: 17 (edX course has incorrect answer of 15 or 16)
+
+### kNN and cross-validation exercise 2
+```{r}
+library(genefilter)
+library(class)
+m <- 8
+k <- 5
+ind <- idx[[2]]
+pvals <- rowttests(t(x[-ind,]), factor(y[-ind]))$p.val
+ind2 <- order(pvals)[1:m]
+predict <- knn(x[-ind,ind2],x[ind,ind2],y[-ind],k=k)
+sum(predict != y[ind])
+```
+
+### kNN and cross-validation exercise 3
+```{r}
+k <- 5
+m <- 8
+result <- sapply(idx,function(ind){
+  pvals <- rowttests(t(x[-ind,]), factor(y[-ind]))$p.val
+  ind2 <- order(pvals)[1:m]
+  predict <- knn(x[-ind,ind2],x[ind,ind2],y[-ind],k=k)
+  sum(predict != y[ind])
+})
+errorrate <- sum(result)/length(y)
+errorrate
+```
+
+### kNN and cross-validation exercise 4
+```{r}
+set.seed(1)
+ms <- 2^c(1:11)
+ks <- seq(1,9,2)
+params <- expand.grid(k=ks,m=ms)
+result <- apply(params,1,function(param){
+  k = param[1]
+  m = param[2]
+  errors = sapply(idx,function(ind){
+    pvals = rowttests(t(x[-ind,]), factor(y[-ind]))$p.val
+    ind2 = order(pvals)[1:m]
+    predict = knn(x[-ind,ind2],x[ind,ind2],y[-ind],k=k)
+    sum(predict != y[ind])
+  })
+  sum(errors)/length(y)
+})
+result
+which.min(result)
+params[which.min(result),]
+```
+Ans: k=3,m=24
+Note: code is incorrect? get k=9, m=16
+
+### kNN and cross-validation exercise 5
+```{r}
+set.seed(1)
+ms <- 2^c(1:11)
+ks <- seq(1,9,2)
+params <- expand.grid(k=ks,m=ms)
+pvals <- rowttests(t(x), factor(y))$p.val
+result <- apply(params,1,function(param){
+  k = param[1]
+  m = param[2]
+  errors = sapply(idx,function(ind){
+    ind2 = order(pvals)[1:m]
+    predict = knn(x[-ind,ind2],x[ind,ind2],y[-ind],k=k)
+    sum(predict != y[ind])
+  })
+  sum(errors)/length(y)
+})
+result
+result[which.min(result)]
+```
+Ans: 0.0833...
+
+### kNN and cross-validation exercise 6
+```{r}
+y <- factor(as.numeric(format(sampleInfo$date, "%m")=="06"))
+ms <- 2^c(1:11)
+ks <- seq(1,9,2)
+params <- expand.grid(k=ks,m=ms)
+result <- apply(params,1,function(param){
+  k = param[1]
+  m = param[2]
+  errors = sapply(idx,function(ind){
+    pvals = rowttests(t(x[-ind,]), factor(y[-ind]))$p.val
+    ind2 = order(pvals)[1:m]
+    predict = knn(x[-ind,ind2],x[ind,ind2],y[-ind],k=k)
+    sum(predict != y[ind])
+  })
+  sum(errors)/length(y)
+})
+result
+result[which.min(result)]
+```

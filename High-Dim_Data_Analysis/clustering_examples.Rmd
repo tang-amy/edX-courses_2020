@@ -1,0 +1,59 @@
+---
+title: "clustering examples"
+author: "Amy Tang"
+date: "4/8/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tissuesGeneExpression)
+data(tissuesGeneExpression)
+d <- dist(t(e)) # get the distances
+hc <- hclust(d) # hierarchial clustering on the distances
+plot(hc, cex=0.5, label=tissue)
+```
+
+```{r}
+library(rafalib)
+myplclust(hc, cex=0.5, label=tissue, lab.col=as.fumeric(tissue)) # color labels by tissue
+```
+
+```{r}
+myplclust(hc, cex=0.5, label=tissue, lab.col=as.fumeric(tissue)) # color labels by tissue
+abline(h=120) # cut along height
+cl <- cutree(hc, h=120)
+table(true=tissue, cluster=cl)
+```
+
+```{r}
+# kmeans clustering
+km <- kmeans(t(e), centers=7)
+table(tissue,clusters=km$cluster)
+mds <- cmdscale(dist(t(e)))
+plot(mds[,1],mds[,2],col=km$cluster)
+```
+
+```{r}
+library(genefilter)
+rv <- rowVars(e)
+idx <- order(-rv)[1:40]
+
+heatmap(e[idx,])
+```
+
+```{r}
+library(RColorBrewer)
+hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
+heatmap(e[idx,], col=hmcol)
+```
+
+```{r}
+library(gplots)
+cols <- palette(brewer.pal(8,"Dark2"))[as.fumeric(tissue)]
+cbind(colnames(e), cols)
+heatmap.2(e[idx,], labCol=tissue, trace="none", ColSideColors=cols, col=hmcol)
+```

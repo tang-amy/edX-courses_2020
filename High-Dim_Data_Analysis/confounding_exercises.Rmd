@@ -1,0 +1,187 @@
+---
+title: "confounding_exercises"
+author: "Amy Tang"
+date: "4/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(devtools)
+install_github("genomicsclass/dagdata")
+```
+
+```{r}
+library(dagdata)
+data(admissions)
+print(admissions)
+# 0 = women; 1 = men
+```
+
+### confounding exercise 1.1
+```{r}
+index = which(admissions$Gender==0)
+accepted = sum(admissions$Number[index] * admissions$Percent[index]/100)
+applied = sum(admissions$Number[index])
+accepted/applied
+```
+Question: percentage of women accepted?
+Ans: 0.30
+
+### confounding exercise 1.2
+```{r}
+accepted <- c()
+rejected <- c()
+for (x in c(0,1)) {
+  index = which(admissions$Gender==x)
+  accept = trunc(sum(admissions$Number[index] * admissions$Percent[index]/100))
+  reject = trunc(sum(admissions$Number[index] * (1-admissions$Percent[index]/100)))
+  accepted[[x+1]] = accept
+  rejected[[x+1]] = reject
+}
+rates = matrix(c(accepted, rejected), ncol=2, byrow=TRUE)
+colnames(rates) = c("Women", "Men")
+rownames(rates) = c("Accepted","Rejected")
+rates <- as.table(rates)
+chisq.test(rates)
+```
+Ans: p-val = 2.2e-16
+
+### confounding exercise 1.3, 1.4
+```{r}
+H <- c()
+for (major in levels(admissions$Major)) {
+  index = which(admissions$Major==major)
+  applied = admissions$Number[index]
+  accepted = admissions$Percent[index]
+  rate = sum(applied * accepted)/sum(applied)
+  H <- c(H,rate)
+}
+admissions$Major[which.min(H)]
+H[which.min(H)]/100
+```
+Ans for E3: F (What is the hardest major to get admitted to?)
+Ans for E4: 0.064 (What is the admission rate for this hardest major?)
+
+### confounding exercise 1.5, 1.6
+```{r}
+appsM = c()
+appsW = c()
+for (major in levels(admissions$Major)) {
+  index = which(admissions$Major==major)
+  applied = admissions$Number[index]
+  appsM = c(appsM, applied[1])
+  appsW = c(appsW, applied[2])
+}
+
+print("Correlation of men applying to admission rate")
+cor(x=H, y=appsM, method="pearson")
+print("Correlation of women applying to admission rate")
+cor(x=H, y=appsW, method="pearson")
+```
+Ans for E5: 0.76
+Ans for E6: -0.67
+
+
+```{r}
+library(Biobase)
+library(devtools)
+install_github("genomicsclass/GSE5859")
+library(GSE5859)
+data(GSE5859)
+```
+### confounding exercise 2.1
+```{r}
+geneExpression <- exprs(e)
+sampleInfo <- pData(e)
+
+year = format(sampleInfo$date, "%y")
+tab = table(year, sampleInfo$ethnicity)
+print(tab)
+x = rowSums(tab != 0)
+sum(x >= 2)
+```
+Ans: in 2 years more than 1 ethnicity is represented
+
+### confounding exercise 2.2
+```{r}
+geneExpression <- exprs(e)
+sampleInfo <- pData(e)
+
+month = format(sampleInfo$date, "%m%y")
+tab2 = table(month, sampleInfo$ethnicity)
+print(tab2)
+x2 = rowSums(tab2 != 0)
+sum(x2 >= 2)/length(unique(month))
+```
+Ans: 0.0476 (4.76%) months have more than 1 ethnicity represented
+
+### confounding exercise 2.3
+```{r}
+library(qvalue)
+library(genefilter)
+
+year = factor(format(sampleInfo$date,"%y"))
+index = which(year%in% c("02", "03") & sampleInfo$ethnicity == "CEU")
+year = droplevels(year[index])
+pval = rowttests(geneExpression[,index], year)$p.value
+qval = qvalue(pval)
+
+sum(qval$qvalue < 0.05)
+
+print(qvalue(pval)$pi0)
+```
+Ans: 4308 genes with p-val < 0.05; estimate of p0 provided by qvalue is 0.3628
+
+### confounding exercse 2.4
+```{r}
+year = factor(format(sampleInfo$date,"%y"))
+index = which(year%in% c("03", "04") & sampleInfo$ethnicity == "CEU")
+year = droplevels(year[index])
+pval = rowttests(geneExpression[,index], year)$p.value
+qval = qvalue(pval)
+
+sum(qval$qvalue < 0.05)
+```
+Ans: 2463 genes
+
+### confounding exercse 2.5
+```{r}
+index = which(sampleInfo$ethnicity%in% c("ASN", "CEU"))
+g = droplevels(sampleInfo$ethnicity[index])
+pval = rowttests(geneExpression[,index], g)$p.value
+qval = qvalue(pval)
+
+sum(qval$qvalue < 0.05)
+```
+Ans: 7217 genes
+
+### confounding exercise 2.6
+```{r}
+year = factor(format(sampleInfo$date,"%y"))
+index = which(sampleInfo$ethnicity%in% c("ASN", "CEU") & year == "05")
+g = droplevels(sampleInfo$ethnicity[index])
+pval = rowttests(geneExpression[,index], g)$p.value
+qval = qvalue(pval)
+
+sum(qval$qvalue < 0.05)
+```
+Ans: 560 genes
+
+### confounding exercise 2.7
+```{r}
+year = factor(format(sampleInfo$date,"%y"))
+index1 = which(sampleInfo$ethnicity == "ASN" & year=="05")
+set.seed(3)
+index2 = sample(which(sampleInfo$ethnicity == "CEU" & year=="02"),3)
+index = c(index1, index2)
+g = droplevels(sampleInfo$ethnicity[index])
+pval = rowttests(geneExpression[,index],g)$p.value
+qval = qvalue(pval)
+
+sum(qval$qvalue < 0.05)
+```
+Ans: 3943

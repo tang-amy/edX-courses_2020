@@ -1,0 +1,109 @@
+---
+title: "hierarchal clustering_exercises"
+author: "Amy Tang"
+date: "4/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+set.seed(1)
+m <- 10000
+n <- 24
+x<- matrix(rnorm(m*n), m, n)
+colnames(x) <- 1:n
+```
+
+### Hierarchal Clustering Exercise 1
+```{r}
+d <- dist(t(x))
+hc <- hclust(d)
+plot(hc, cex=0.5)
+```
+
+```{r}
+cl <- cutree(hc, h=143)
+result <- table(cluster=cl)
+result
+```
+### Hierarchal Clustering Exercise 1
+```{r}
+set.seed(1)
+nc <- replicate(100,{
+  x1 <- matrix(rnorm(m*n), m, n)
+  distance <- dist(t(x1))
+  hc1 <- hclust(d)
+  cl1 <- cutree(hc1, h=143)
+  length(cl1)
+  })
+plot(table(nc))
+popsd(nc)
+```
+
+### KMeans Exercise 1
+```{r}
+library(GSE5859Subset)
+data(GSE5859Subset)
+
+mds <- cmdscale(dist(t(geneExpression)))
+set.seed(10)
+km <- kmeans(t(geneExpression), centers=5)
+plot(mds, bg=km$c1, pch=21)
+table(sampleInfo$group, clusters=km$cluster)
+```
+
+### Heat Maps Exercise 1
+```{r}
+library(GSE5859Subset)
+data(GSE5859Subset)
+
+library(matrixStats)
+
+library(gplots)
+
+### from edX course
+## make colors
+cols = colorRampPalette(rev(brewer.pal(11,"RdBu")))(25)
+gcol=brewer.pal(3,"Dark2")
+gcol=gcol[sampleInfo$g+1]
+
+## make lables: remove 2005 since it's common to all
+labcol= gsub("2005-","",sampleInfo$date)  
+
+## pick highly variable genes:
+sds =rowMads(geneExpression)
+ind = order(sds,decreasing=TRUE)[1:25]
+
+## make heatmap
+heatmap.2(geneExpression[ind,],
+          col=cols,
+          trace="none",
+          scale="row",
+          labRow=geneAnnotation$CHR[ind],
+          labCol=labcol,
+          ColSideColors=gcol,
+          key=FALSE)
+```
+
+### Heat Mps Exercise 2
+```{r}
+# creating random data
+set.seed(17)
+m <- nrow(geneExpression)
+n <- ncol(geneExpression)
+x <- matrix(rnorm(m*n), m, n)
+g <- factor(sampleInfo$g)
+
+cols <- colorRampPalette(rev(brewer.pal(11, "RdBu")))(25)
+
+ttest <- rowttests(x, g)
+sds <- rowSds(x)
+indexes <- list(t=order(ttest$p.value)[1:50], s=order(-sds)[1:50])
+for (ind in indexes) {
+  heatmap.2(x[ind,], col=cols, trace="none", scale="row",labCol=g, key=FALSE)
+}
+```
